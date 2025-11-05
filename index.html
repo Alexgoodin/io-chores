@@ -7,31 +7,13 @@
   <meta name="description" content="Simple household chore tracker with a lightweight password gate." />
   <style>
     :root{
-      --bg:#0f172a;          /* slate-900 */
-      --card:#0b1226;        /* deep navy */
-      --card-2:#111b35;
-      --text:#e5e7eb;        /* gray-200 */
-      --muted:#9ca3af;       /* gray-400 */
-      --brand:#60a5fa;       /* blue-400 */
-      --ok:#34d399;          /* emerald-400 */
-      --bad:#f87171;         /* red-400 */
-      --warn:#fbbf24;        /* amber-400 */
-      --shadow:0 10px 25px rgba(0,0,0,.35);
-      --radius:18px;
+      --bg:#0f172a; --text:#e5e7eb; --muted:#9ca3af; --brand:#60a5fa; --ok:#34d399; --bad:#f87171; --warn:#fbbf24; --radius:18px; --shadow:0 10px 25px rgba(0,0,0,.35);
     }
     *{box-sizing:border-box}
     html,body{height:100%}
-    body{
-      margin:0; font-family: ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Apple Color Emoji","Segoe UI Emoji";
-      color:var(--text); background: radial-gradient(1200px 600px at 20% -10%, #1e293b 0%, #0b1022 45%, #090d1c 60%, #060913 100%), var(--bg);
-    }
+    body{margin:0; font-family: ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; color:var(--text);
+      background: radial-gradient(1200px 600px at 20% -10%, #1e293b 0%, #0b1022 45%, #090d1c 60%, #060913 100%), #0f172a;}
     a{color:var(--brand); text-decoration:none}
-    header{
-      position:sticky; top:0; z-index:10;
-      backdrop-filter:saturate(1.2) blur(8px);
-      background: linear-gradient(180deg, rgba(9,13,28,.85), rgba(9,13,28,.55));
-      border-bottom:1px solid rgba(255,255,255,.06);
-    }
     .container{max-width:1100px; margin:0 auto; padding:20px}
     .row{display:flex; gap:14px; align-items:center; flex-wrap:wrap}
     .title{font-weight:800; letter-spacing:.3px; font-size:22px}
@@ -39,8 +21,7 @@
     .subtle{color:var(--muted); font-size:14px}
     .btn{appearance:none; border:1px solid rgba(255,255,255,.12); background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(0,0,0,.08));
       color:var(--text); border-radius:12px; padding:9px 14px; cursor:pointer; transition:.18s transform ease, .18s opacity;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 1px 0 rgba(255,255,255,.05);
-    }
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 1px 0 rgba(255,255,255,.05);}
     .btn:hover{transform:translateY(-1px)}
     .btn.ghost{background:transparent}
     .btn.primary{border-color: rgba(96,165,250,.5); background: linear-gradient(180deg, rgba(96,165,250,.25), rgba(96,165,250,.1));}
@@ -74,327 +55,211 @@
       border-radius:12px; padding:10px 12px; font-size:16px; outline:none}
     .error{color:#fecaca; font-size:13px; min-height:16px; margin-top:4px}
 
-    /* Settings */
-    #settings .row{display:grid; grid-template-columns: 1.2fr 1.8fr auto; gap:10px; margin-bottom:10px}
-    #settings input{width:100%}
-    .remove-row{width:36px; height:36px; border-radius:10px}
-
     footer.note{max-width:1100px; margin:16px auto 32px; padding:0 20px; color:var(--muted); font-size:12px}
-  </style>
-  <style>
-    /* Force-hide any element with the HTML "hidden" attribute, even if other CSS sets display. */
     [hidden]{display:none !important}
   </style>
 </head>
 <body>
   <!-- Password Gate -->
   <div id="auth-overlay" class="overlay">
-    <form id="login-form" class="modal" autocomplete="off">
+    <div class="modal" autocomplete="off">
       <h1>IO Chores</h1>
       <p class="muted">Enter the password to continue.</p>
       <div class="field">
-        <input id="password" type="password" placeholder="Password" required aria-label="Password" />
-        <button id="login-button" class="btn primary" type="button">Enter</button>
+        <input id="password" type="password" placeholder="Password" aria-label="Password" />
+        <button id="login-button" class="btn primary" type="button" onclick="login()">Enter</button>
       </div>
       <div id="pw-error" class="error"></div>
       <p class="subtle" style="margin-top:10px">Heads up: this is a lightweight client-side lock for convenience, not true security.</p>
-    </form>
+    </div>
   </div>
 
   <!-- App Header -->
-  <header>
+  <header hidden id="app-header">
     <div class="container">
       <div class="row">
         <div class="title">IO Chores</div>
         <div class="subtle">Today: <span id="today"></span></div>
         <div class="spacer"></div>
-        <span id="admin-badge" class="pill" style="display:none">ADMIN</span>
+        <span id="admin-badge" class="pill" hidden>ADMIN</span>
         <div class="subtle" id="summary">0/0 reported today</div>
-        <button id="open-settings" class="btn ghost" title="Manage people & chores">⚙️ Settings</button>
-        <button id="export" class="btn ghost" title="Export data">Export</button>
-        <button id="import" class="btn ghost" title="Import data">Import</button>
-        <button id="reset-today" class="btn danger" title="Clear today">Reset Today</button>
-        <button id="signout" class="btn ghost" title="Sign out">Sign out</button>
+        <button id="export" class="btn ghost" hidden onclick="doExport()">Export</button>
+        <button id="import" class="btn ghost" hidden onclick="document.getElementById('import-file').click()">Import</button>
+        <button id="reset-today" class="btn danger" hidden onclick="resetToday()">Reset Today</button>
+        <button id="signout" class="btn ghost" onclick="signOut()">Sign out</button>
       </div>
     </div>
   </header>
 
   <!-- Main -->
   <main id="app" hidden>
-    <div class="grid" id="grid"></div>
+    <div class="container">
+      <section id="admin-panel" hidden>
+        <h2>People & Chores (Admin)</h2>
+        <div id="admin-rows"></div>
+        <div class="row" style="margin:10px 0">
+          <button class="btn" onclick="addAdminRow()">+ Add Person</button>
+          <div class="spacer"></div>
+          <button class="btn primary" onclick="saveAdmin()">Save Changes</button>
+        </div>
+        <hr style="border-color:rgba(255,255,255,.1)"/>
+      </section>
+      <div class="grid" id="grid"></div>
+    </div>
   </main>
 
   <footer class="note">
-    Tip: Click ⚙️ Settings to add/remove people or edit chore lists. All data stays on this device (localStorage). Use Export/Import to move it.
+    Tip: All data stays on this device (localStorage). Use Export/Import to move it.
   </footer>
-
-  <!-- Settings Modal -->
-  <div id="settings-modal" class="overlay" hidden>
-    <div class="modal" style="max-width:760px">
-      <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px">
-        <h2 style="margin:0">People & Chores</h2>
-        <div class="spacer"></div>
-        <button id="close-settings" class="btn ghost">Close</button>
-      </div>
-      <div id="settings"></div>
-      <div class="row" style="margin-top:8px">
-        <button id="add-member" class="btn">+ Add Person</button>
-        <div class="spacer"></div>
-        <button id="save-settings" class="btn primary">Save Changes</button>
-      </div>
-    </div>
-  </div>
 
   <!-- Hidden file input for import -->
   <input type="file" id="import-file" accept="application/json" hidden />
 
   <script>
-  (()=>{
-    // Hard-force the initial view to be the password screen
-    const auth = document.getElementById('auth-overlay');
-    const appRoot = document.getElementById('app');
-    const settingsModal = document.getElementById('settings-modal');
-    if (auth) auth.style.display = 'flex';
-    if (appRoot) appRoot.hidden = true;
-    if (settingsModal) settingsModal.hidden = true;
-    const USER_PASSWORD = "BOOCH"; // opens grid
-    const ADMIN_PASSWORD = "GOODINISTHEBEST"; // opens admin screen
+  // ===== Simple, robust vanilla JS (no frameworks, no modals on load) =====
+  const USER_PASSWORD = 'BOOCH';
+  const ADMIN_PASSWORD = 'GOODINISTHEBEST';
+  const STORAGE_KEY = 'iochores_data_v2';
 
-    const STORAGE_KEY = "iochores_data_v1";
-    const SESSION_KEY = "iochores_role"; // 'user' or 'admin'
+  let role = null; // 'user' | 'admin'
+  let data = loadData();
 
-    // Change these defaults after first run via Settings UI
-    const DEFAULT_MEMBERS = [
-      { id: "alex", name: "Alex", chores: ["Dishes", "Trash"] },
-      { id: "sam", name: "Sam", chores: ["Laundry", "Vacuum"] },
-      { id: "taylor", name: "Taylor", chores: ["Wipe counters", "Feed pets"] }
-    ];
-
-    function loadData(){
+  function loadData(){
+    try{
       const raw = localStorage.getItem(STORAGE_KEY);
-      if(raw){ try { return JSON.parse(raw); } catch(e){ console.warn("Bad data in storage", e); } }
-      return { members: DEFAULT_MEMBERS, reports: {} };
-    }
-    function saveData(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
-    function todayKey(){ return new Date().toISOString().slice(0,10); } // YYYY-MM-DD
+      if(raw) return JSON.parse(raw);
+    }catch(e){}
+    return {members:[
+      {id:'alex', name:'Alex', chores:['Dishes','Trash']},
+      {id:'sam', name:'Sam', chores:['Laundry','Vacuum']},
+      {id:'taylor', name:'Taylor', chores:['Wipe counters','Feed pets']}
+    ], reports:{}};
+  }
+  function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+  function today(){ return new Date().toISOString().slice(0,10); }
+  function ensureToday(){ const k=today(); if(!data.reports[k]){ data.reports[k]={}; save(); } }
+  function slug(s){ return (s||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'') || 'm-'+Math.random().toString(36).slice(2,7); }
+  function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m])); }
 
-    let data = loadData();
-    let currentRole = null; // 'user' | 'admin'
-
-    function ensureToday(){
-      const k = todayKey();
-      if(!data.reports[k]){ data.reports[k] = {}; saveData(); }
-    }
-
-    function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m])); }
-
-    function render(){
-      ensureToday();
-      const k = todayKey();
-      const grid = document.getElementById('grid');
-      grid.innerHTML = '';
-      let reportedCount = 0, total = data.members.length;
-
-      data.members.forEach(m => {
-        const status = data.reports[k][m.id];
-        if(status && typeof status.reported === 'boolean') reportedCount++;
-        const wrap = document.createElement('div');
-        wrap.className = 'card';
-        wrap.innerHTML = `
-          <div class="person">
-            <div class="name">${escapeHtml(m.name)}</div>
-            <ul class="chores">${m.chores.map(c=>`<li>${escapeHtml(c)}</li>`).join('')}</ul>
-          </div>
-          <div class="report">
-            <span>Status: ${status ? (status.reported ? '<span class="pill yes">Reported: YES</span>' : '<span class="pill no">Reported: NO</span>') : '<span class="pill pending">No report</span>'}</span>
-            <div class="actions">
-              <button class="btn primary" data-act="report" data-val="yes" data-id="${m.id}">Yes</button>
-              <button class="btn" data-act="report" data-val="no" data-id="${m.id}">No</button>
-              <button class="btn ghost" data-act="clear" data-id="${m.id}">Clear</button>
-            </div>
-          </div>`;
-        grid.appendChild(wrap);
-      });
-
-      document.getElementById('summary').textContent = `${reportedCount}/${total} reported today`;
-    }
-
-    document.addEventListener('click', (e) => {
-      const t = e.target;
-      if(t.dataset && t.dataset.act === 'report'){
-        const id = t.dataset.id; const yes = t.dataset.val === 'yes';
-        ensureToday(); const k = todayKey();
-        data.reports[k][id] = { reported: yes, ts: Date.now() };
-        saveData(); render();
-      }
-      if(t.dataset && t.dataset.act === 'clear'){
-        const id = t.dataset.id; ensureToday(); const k = todayKey();
-        delete data.reports[k][id]; saveData(); render();
-      }
-      if(t.id === 'reset-today'){
-        if(currentRole !== 'admin') return; // admin only
-        if(confirm("Clear everyone’s report for today?")){
-          data.reports[todayKey()] = {}; saveData(); render();
-        }
-      }
-      if(t.id === 'export'){
-        if(currentRole !== 'admin') return; // admin only
-        const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a'); a.href = url; a.download = 'io-chores-data.json'; a.click();
-        URL.revokeObjectURL(url);
-      }
-      if(t.id === 'import'){
-        if(currentRole !== 'admin') return; // admin only
-        document.getElementById('import-file').click();
-      }
-      if(t.id === 'open-settings'){
-        if(currentRole !== 'admin') return; // admin only
-        openSettings();
-      }
-      if(t.id === 'close-settings') closeSettings();
-      if(t.id === 'add-member') addMemberRow();
-      if(t.classList && t.classList.contains('remove-row')) t.closest('.row').remove();
-      if(t.id === 'save-settings') saveSettings();
-      if(t.id === 'signout'){
-        sessionStorage.removeItem(SESSION_KEY);
-        location.reload();
-      }
-    });
-
-    document.getElementById('import-file').addEventListener('change', (e) => {
-      const f = e.target.files[0]; if(!f) return;
-      const reader = new FileReader();
-      reader.onload = () => {
-        try{
-          const obj = JSON.parse(reader.result);
-          if(obj && Array.isArray(obj.members) && obj.reports && typeof obj.reports === 'object'){
-            data = obj; saveData(); render(); alert('Imported!');
-          } else alert('Invalid file format.');
-        }catch(err){ alert('Could not parse file.'); }
-      };
-      reader.readAsText(f);
-      e.target.value = '';
-    });
-
-    function openSettings(){
-      const modal = document.getElementById('settings-modal');
-      const box = document.getElementById('settings');
-      box.innerHTML = '';
-      data.members.forEach(m => addMemberRow(m.name, m.chores.join(', ')));
-      modal.hidden = false;
-    }
-    function closeSettings(){ document.getElementById('settings-modal').hidden = true; }
-    function addMemberRow(name='', chores=''){
-      const box = document.getElementById('settings');
-      const div = document.createElement('div');
-      div.className = 'row';
-      div.innerHTML = `
-        <input class="m-name" placeholder="Name" value="${escapeHtml(name)}" />
-        <input class="m-chores" placeholder="Chores (comma-separated)" value="${escapeHtml(chores)}" />
-        <button type="button" class="btn remove-row" title="Remove">×</button>`;
-      box.appendChild(div);
-    }
-    function slug(s){ return s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'') || 'member-'+Math.random().toString(36).slice(2,7); }
-    function dedupeById(arr){ const seen=new Set(); return arr.filter(m => (seen.has(m.id) ? false : (seen.add(m.id), true))); }
-    function saveSettings(){
-      const rows = [...document.querySelectorAll('#settings .row')];
-      const members = rows.map(row => {
-        const name = row.querySelector('.m-name').value.trim();
-        const chores = row.querySelector('.m-chores').value.split(',').map(s=>s.trim()).filter(Boolean);
-        const id = slug(name);
-        return name ? { id, name, chores } : null;
-      }).filter(Boolean);
-      data.members = dedupeById(members);
-      saveData();
-      closeSettings();
-      render();
-    }
-
-    function setRoleUI(){
-      const isAdmin = currentRole === 'admin';
-      document.getElementById('admin-badge').style.display = isAdmin ? 'inline-flex' : 'none';
-
-      // Show/hide admin-only controls
-      const adminOnly = ['open-settings','export','import','reset-today'];
-      adminOnly.forEach(id => {
-        const el = document.getElementById(id);
-        if(el) el.style.display = isAdmin ? '' : 'none';
-      });
-    }
-
-    function showApp(role){
-      currentRole = role;
-      document.getElementById('app').hidden = false;
-      document.getElementById('auth-overlay').style.display = 'none';
-      setRoleUI();
-      render();
-      if(role === 'admin') openSettings(); // go straight to admin screen
-    }
-
-    function checkAuth(){
-      // Always require the password screen on page load — do NOT auto-login from session.
-      const form = document.getElementById('login-form');
-      const btn = document.getElementById('login-button');
-      const pw = document.getElementById('password');
-
-      function handleLogin(){
-        const v = (pw ? pw.value : '').trim();
-        if(!v) return;
-        if(v === USER_PASSWORD){
-          sessionStorage.setItem(SESSION_KEY, 'user');
-          showApp('user');
-        } else if(v === ADMIN_PASSWORD){
-          sessionStorage.setItem(SESSION_KEY, 'admin');
-          showApp('admin');
-        } else {
-          const err = document.getElementById('pw-error');
-          if(err) err.textContent = 'Incorrect password.';
-        }
-      }
-
-      // Prevent any default form submission reloading the page
-      if(form){ form.setAttribute('action', ''); form.addEventListener('submit', (e)=>{ e.preventDefault(); return false; }); }
-      if(btn){ btn.addEventListener('click', (e)=>{ e.preventDefault(); handleLogin(); }); }
-      if(pw){ pw.addEventListener('keydown', (e)=>{ if(e.key === 'Enter'){ e.preventDefault(); handleLogin(); } }); }
+  function login(){
+    const v = (document.getElementById('password').value||'').trim();
+    if(!v) return;
+    if(v === USER_PASSWORD){
+      role = 'user';
+      startApp();
     } else if(v === ADMIN_PASSWORD){
-          sessionStorage.setItem(SESSION_KEY, 'admin');
-          showApp('admin');
-        } else {
-          document.getElementById('pw-error').textContent = 'Incorrect password.';
-        }
-      }
-
-      form.addEventListener('submit', (e) => { e.preventDefault(); handleLogin(); });
-      if(btn) btn.addEventListener('click', (e) => { e.preventDefault(); handleLogin(); });
-      if(pw) pw.addEventListener('keydown', (e) => { if(e.key === 'Enter'){ e.preventDefault(); handleLogin(); } });
-    } else if(v === ADMIN_PASSWORD){
-          sessionStorage.setItem(SESSION_KEY, 'admin');
-          showApp('admin');
-        } else {
-          document.getElementById('pw-error').textContent = 'Incorrect password.';
-        }
-      });
+      role = 'admin';
+      startApp(true);
+    } else {
+      document.getElementById('pw-error').textContent = 'Incorrect password.';
     }
-      const form = document.getElementById('login-form');
-      form.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const v = document.getElementById('password').value;
-        if(v === USER_PASSWORD){
-          sessionStorage.setItem(SESSION_KEY, 'user');
-          showApp('user');
-        } else if(v === ADMIN_PASSWORD){
-          sessionStorage.setItem(SESSION_KEY, 'admin');
-          showApp('admin');
-        } else {
-          document.getElementById('pw-error').textContent = 'Incorrect password.';
-        }
-      });
-    }
+  }
+  document.getElementById('password').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); login(); }});
 
+  function startApp(openAdmin=false){
+    document.getElementById('auth-overlay').hidden = true;
+    document.getElementById('app').hidden = false;
+    document.getElementById('app-header').hidden = false;
     document.getElementById('today').textContent = new Date().toLocaleDateString();
-    checkAuth();
-  })();
+
+    const isAdmin = role === 'admin';
+    document.getElementById('admin-badge').hidden = !isAdmin;
+    document.getElementById('export').hidden = !isAdmin;
+    document.getElementById('import').hidden = !isAdmin;
+    document.getElementById('reset-today').hidden = !isAdmin;
+    document.getElementById('admin-panel').hidden = !isAdmin;
+
+    render();
+    if(openAdmin && isAdmin){ renderAdmin(); }
+  }
+
+  function render(){
+    ensureToday();
+    const k = today();
+    const grid = document.getElementById('grid');
+    grid.innerHTML = '';
+    let reportedCount = 0, total = data.members.length;
+
+    data.members.forEach(m => {
+      const status = data.reports[k][m.id];
+      if(status && typeof status.reported==='boolean') reportedCount++;
+      const div = document.createElement('div');
+      div.className = 'card';
+      div.innerHTML = `
+        <div class="name">${escapeHtml(m.name)}</div>
+        <ul class="chores">${m.chores.map(c=>`<li>${escapeHtml(c)}</li>`).join('')}</ul>
+        <div class="report">
+          <span>Status: ${status ? (status.reported ? '<span class="pill yes">Reported: YES</span>' : '<span class="pill no">Reported: NO</span>') : '<span class="pill pending">No report</span>'}</span>
+          <div class="actions">
+            <button class="btn primary" onclick="reportYes('${m.id}')">Yes</button>
+            <button class="btn" onclick="reportNo('${m.id}')">No</button>
+            <button class="btn ghost" onclick="reportClear('${m.id}')">Clear</button>
+          </div>
+        </div>`;
+      grid.appendChild(div);
+    });
+    document.getElementById('summary').textContent = `${reportedCount}/${total} reported today`;
+  }
+
+  function reportYes(id){ ensureToday(); data.reports[today()][id]={reported:true, ts:Date.now()}; save(); render(); }
+  function reportNo(id){ ensureToday(); data.reports[today()][id]={reported:false, ts:Date.now()}; save(); render(); }
+  function reportClear(id){ ensureToday(); delete data.reports[today()][id]; save(); render(); }
+  function resetToday(){ if(role!=='admin') return; if(confirm('Clear everyone’s report for today?')){ data.reports[today()]={}; save(); render(); } }
+
+  // ---- Admin panel ----
+  function renderAdmin(){
+    const box = document.getElementById('admin-rows');
+    box.innerHTML = '';
+    data.members.forEach(m=>{
+      const row = document.createElement('div');
+      row.className = 'row';
+      row.innerHTML = `
+        <input class="m-name" placeholder="Name" value="${escapeHtml(m.name)}" />
+        <input class="m-chores" placeholder="Chores (comma-separated)" value="${escapeHtml(m.chores.join(', '))}" />
+        <button class="btn" onclick="this.parentElement.remove()">Remove</button>`;
+      box.appendChild(row);
+    });
+  }
+  function addAdminRow(){
+    const box = document.getElementById('admin-rows');
+    const row = document.createElement('div');
+    row.className = 'row';
+    row.innerHTML = `
+      <input class="m-name" placeholder="Name" />
+      <input class="m-chores" placeholder="Chores (comma-separated)" />
+      <button class="btn" onclick="this.parentElement.remove()">Remove</button>`;
+    box.appendChild(row);
+  }
+  function saveAdmin(){
+    if(role !== 'admin') return;
+    const rows = Array.from(document.querySelectorAll('#admin-rows .row'));
+    const members = rows.map(r=>{
+      const name = r.querySelector('.m-name').value.trim();
+      const chores = r.querySelector('.m-chores').value.split(',').map(s=>s.trim()).filter(Boolean);
+      if(!name) return null;
+      return {id: slug(name), name, chores};
+    }).filter(Boolean);
+    data.members = dedupe(members);
+    save();
+    render();
+    alert('Saved!');
+  }
+  function dedupe(arr){ const seen = new Set(); return arr.filter(m=> (seen.has(m.id) ? false : (seen.add(m.id), true))); }
+
+  // ---- Export / Import ----
+  function doExport(){ if(role!=='admin') return; const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='io-chores-data.json'; a.click(); URL.revokeObjectURL(url); }
+  document.getElementById('import-file').addEventListener('change', e=>{
+    if(role!=='admin') return;
+    const f=e.target.files[0]; if(!f) return;
+    const reader=new FileReader();
+    reader.onload=()=>{ try{ const obj=JSON.parse(reader.result); if(obj && Array.isArray(obj.members) && obj.reports && typeof obj.reports==='object'){ data=obj; save(); render(); renderAdmin(); alert('Imported!'); } else alert('Invalid file.'); }catch(err){ alert('Parse error'); } };
+    reader.readAsText(f); e.target.value='';
+  });
+
+  function signOut(){ role=null; location.reload(); }
+
+  // Do not auto-login; always show the password screen at start
+  document.getElementById('auth-overlay').hidden = false;
   </script>
 </body>
 </html>
