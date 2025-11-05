@@ -322,8 +322,22 @@
     }
 
     function checkAuth(){
-      const existing = sessionStorage.getItem(SESSION_KEY);
-      if(existing === 'user' || existing === 'admin'){ showApp(existing); return; }
+      // Always require the password screen on page load — do NOT auto-login from session.
+      const form = document.getElementById('login-form');
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const v = document.getElementById('password').value;
+        if(v === USER_PASSWORD){
+          sessionStorage.setItem(SESSION_KEY, 'user');
+          showApp('user');
+        } else if(v === ADMIN_PASSWORD){
+          sessionStorage.setItem(SESSION_KEY, 'admin');
+          showApp('admin');
+        } else {
+          document.getElementById('pw-error').textContent = 'Incorrect password.';
+        }
+      });
+    }
       const form = document.getElementById('login-form');
       form.addEventListener('submit', (e) => {
         e.preventDefault();
