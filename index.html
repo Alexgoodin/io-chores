@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>IO Chores</title>
+  <meta name="description" content="Simple household chore tracker with a lightweight password gate." />
+  <style>
+    :root{
+      --bg:#0f172a;          /* slate-900 */
+      --card:#0b1226;        /* deep navy */
+      --card-2:#111b35;
+      --text:#e5e7eb;        /* gray-200 */
+      --muted:#9ca3af;       /* gray-400 */
+      --brand:#60a5fa;       /* blue-400 */
+      --ok:#34d399;          /* emerald-400 */
+      --bad:#f87171;         /* red-400 */
+      --warn:#fbbf24;        /* amber-400 */
+      --shadow:0 10px 25px rgba(0,0,0,.35);
+      --radius:18px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family: ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Apple Color Emoji","Segoe UI Emoji";
+      color:var(--text); background: radial-gradient(1200px 600px at 20% -10%, #1e293b 0%, #0b1022 45%, #090d1c 60%, #060913 100%), var(--bg);
+    }
+    a{color:var(--brand); text-decoration:none}
+    header{
+      position:sticky; top:0; z-index:10;
+      backdrop-filter:saturate(1.2) blur(8px);
+      background: linear-gradient(180deg, rgba(9,13,28,.85), rgba(9,13,28,.55));
+      border-bottom:1px solid rgba(255,255,255,.06);
+    }
+    .container{max-width:1100px; margin:0 auto; padding:20px}
+    .row{display:flex; gap:14px; align-items:center; flex-wrap:wrap}
+    .title{font-weight:800; letter-spacing:.3px; font-size:22px}
+    .spacer{flex:1}
+    .subtle{color:var(--muted); font-size:14px}
+    .btn{appearance:none; border:1px solid rgba(255,255,255,.12); background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(0,0,0,.08));
+      color:var(--text); border-radius:12px; padding:9px 14px; cursor:pointer; transition:.18s transform ease, .18s opacity;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 1px 0 rgba(255,255,255,.05);
+    }
+    .btn:hover{transform:translateY(-1px)}
+    .btn.ghost{background:transparent}
+    .btn.primary{border-color: rgba(96,165,250,.5); background: linear-gradient(180deg, rgba(96,165,250,.25), rgba(96,165,250,.1));}
+    .btn.danger{border-color: rgba(248,113,113,.5); background: linear-gradient(180deg, rgba(248,113,113,.25), rgba(248,113,113,.1));}
+
+    main{padding:24px 20px 60px}
+    .grid{max-width:1100px; margin:0 auto; display:grid; grid-template-columns: repeat(auto-fit, minmax(240px,1fr)); gap:18px}
+    .card{background: linear-gradient(160deg, rgba(255,255,255,.06), rgba(255,255,255,.02)); border:1px solid rgba(255,255,255,.08); border-radius: var(--radius);
+      box-shadow: var(--shadow); padding:16px 16px 14px}
+    .name{font-size:18px; font-weight:700}
+    ul.chores{margin:8px 0 12px 0; padding-left:18px; color:var(--muted)}
+    ul.chores li{margin:4px 0}
+    .report{display:flex; gap:10px; align-items:center; justify-content:space-between; flex-wrap:wrap}
+    .pill{font-size:12px; padding:6px 10px; border-radius:999px; border:1px solid rgba(255,255,255,.1); background: rgba(255,255,255,.04)}
+    .pill.yes{border-color: rgba(52,211,153,.6); background: rgba(52,211,153,.08)}
+    .pill.no{border-color: rgba(248,113,113,.6); background: rgba(248,113,113,.08)}
+    .pill.pending{border-color: rgba(251,191,36,.6); background: rgba(251,191,36,.08)}
+    .actions{display:flex; gap:8px}
+
+    /* Overlays */
+    .overlay{position:fixed; inset:0; display:flex; align-items:center; justify-content:center; padding:18px; z-index:9999;
+      background: radial-gradient(1200px 600px at 20% -10%, rgba(30,41,59,.8) 0%, rgba(9,13,28,.9) 60%, rgba(6,9,19,.95) 100%);
+      border-top:1px solid rgba(255,255,255,.06);
+    }
+    .modal{width:100%; max-width:520px; background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+      border:1px solid rgba(255,255,255,.1); border-radius:22px; box-shadow: var(--shadow); padding:22px}
+    .modal h1{margin:4px 0 2px; font-size:28px}
+    .muted{color:var(--muted)}
+    .field{margin-top:14px; display:flex; gap:8px}
+    input[type=password], input[type=text]{flex:1; background: rgba(255,255,255,.06); color:var(--text); border:1px solid rgba(255,255,255,.12);
+      border-radius:12px; padding:10px 12px; font-size:16px; outline:none}
+    .error{color:#fecaca; font-size:13px; min-height:16px; margin-top:4px}
+
+    /* Settings */
+    #settings .row{display:grid; grid-template-columns: 1.2fr 1.8fr auto; gap:10px; margin-bottom:10px}
+    #settings input{width:100%}
+    .remove-row{width:36px; height:36px; border-radius:10px}
+
+    footer.note{max-width:1100px; margin:16px auto 32px; padding:0 20px; color:var(--muted); font-size:12px}
+  </style>
+</head>
+<body>
+  <!-- Password Gate -->
+  <div id="auth-overlay" class="overlay">
+    <form id="login-form" class="modal" autocomplete="off">
+      <h1>IO Chores</h1>
+      <p class="muted">Enter the password to continue.</p>
+      <div class="field">
+        <input id="password" type="password" placeholder="Password" required aria-label="Password" />
+        <button class="btn primary" type="submit">Enter</button>
+      </div>
+      <div id="pw-error" class="error"></div>
+      <p class="subtle" style="margin-top:10px">Heads up: this is a lightweight client-side lock for convenience, not true security.</p>
+    </form>
+  </div>
+
+  <!-- App Header -->
+  <header>
+    <div class="container">
+      <div class="row">
+        <div class="title">IO Chores</div>
+        <div class="subtle">Today: <span id="today"></span></div>
+        <div class="spacer"></div>
+        <div class="subtle" id="summary">0/0 reported today</div>
+        <button id="open-settings" class="btn ghost" title="Manage people & chores">⚙️ Settings</button>
+        <button id="export" class="btn ghost" title="Export data">Export</button>
+        <button id="import" class="btn ghost" title="Import data">Import</button>
+        <button id="reset-today" class="btn danger" title="Clear today">Reset Today</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main id="app" hidden>
+    <div class="grid" id="grid"></div>
+  </main>
+
+  <footer class="note">
+    Tip: Click ⚙️ Settings to add/remove people or edit chore lists. All data stays on this device (localStorage). Use Export/Import to move it.
+  </footer>
+
+  <!-- Settings Modal -->
+  <div id="settings-modal" class="overlay" hidden>
+    <div class="modal" style="max-width:760px">
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px">
+        <h2 style="margin:0">People & Chores</h2>
+        <div class="spacer"></div>
+        <button id="close-settings" class="btn ghost">Close</button>
+      </div>
+      <div id="settings"></div>
+      <div class="row" style="margin-top:8px">
+        <button id="add-member" class="btn">+ Add Person</button>
+        <div class="spacer"></div>
+        <button id="save-settings" class="btn primary">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hidden file input for import -->
+  <input type="file" id="import-file" accept="application/json" hidden />
+
+  <script>
+  (()=>{
+    const PASSWORD = "BOOCH"; // Case-sensitive
+    const STORAGE_KEY = "iochores_data_v1";
+    const SESSION_KEY = "iochores_authed"; // session-only auth flag
+
+    // Change these defaults after first run via Settings UI
+    const DEFAULT_MEMBERS = [
+      { id: "alex", name: "Alex", chores: ["Dishes", "Trash"] },
+      { id: "sam", name: "Sam", chores: ["Laundry", "Vacuum"] },
+      { id: "taylor", name: "Taylor", chores: ["Wipe counters", "Feed pets"] }
+    ];
+
+    function loadData(){
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(raw){ try { return JSON.parse(raw); } catch(e){ console.warn("Bad data in storage", e); } }
+      return { members: DEFAULT_MEMBERS, reports: {} };
+    }
+    function saveData(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+    function todayKey(){ return new Date().toISOString().slice(0,10); } // YYYY-MM-DD
+
+    let data = loadData();
+
+    function ensureToday(){
+      const k = todayKey();
+      if(!data.reports[k]){ data.reports[k] = {}; saveData(); }
+    }
+
+    function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m])); }
+
+    function render(){
+      ensureToday();
+      const k = todayKey();
+      const grid = document.getElementById('grid');
+      grid.innerHTML = '';
+      let reportedCount = 0, total = data.members.length;
+
+      data.members.forEach(m => {
+        const status = data.reports[k][m.id];
+        if(status && typeof status.reported === 'boolean') reportedCount++;
+        const wrap = document.createElement('div');
+        wrap.className = 'card';
+        wrap.innerHTML = `
+          <div class="person">
+            <div class="name">${escapeHtml(m.name)}</div>
+            <ul class="chores">${m.chores.map(c=>`<li>${escapeHtml(c)}</li>`).join('')}</ul>
+          </div>
+          <div class="report">
+            <span>Status: ${status ? (status.reported ? '<span class="pill yes">Reported: YES</span>' : '<span class="pill no">Reported: NO</span>') : '<span class="pill pending">No report</span>'}</span>
+            <div class="actions">
+              <button class="btn primary" data-act="report" data-val="yes" data-id="${m.id}">Yes</button>
+              <button class="btn" data-act="report" data-val="no" data-id="${m.id}">No</button>
+              <button class="btn ghost" data-act="clear" data-id="${m.id}">Clear</button>
+            </div>
+          </div>`;
+        grid.appendChild(wrap);
+      });
+
+      document.getElementById('summary').textContent = `${reportedCount}/${total} reported today`;
+    }
+
+    document.addEventListener('click', (e) => {
+      const t = e.target;
+      if(t.dataset && t.dataset.act === 'report'){
+        const id = t.dataset.id; const yes = t.dataset.val === 'yes';
+        ensureToday(); const k = todayKey();
+        data.reports[k][id] = { reported: yes, ts: Date.now() };
+        saveData(); render();
+      }
+      if(t.dataset && t.dataset.act === 'clear'){
+        const id = t.dataset.id; ensureToday(); const k = todayKey();
+        delete data.reports[k][id]; saveData(); render();
+      }
+      if(t.id === 'reset-today'){
+        if(confirm("Clear everyone’s report for today?")){
+          data.reports[todayKey()] = {}; saveData(); render();
+        }
+      }
+      if(t.id === 'export'){
+        const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = 'io-chores-data.json'; a.click();
+        URL.revokeObjectURL(url);
+      }
+      if(t.id === 'import'){
+        document.getElementById('import-file').click();
+      }
+      if(t.id === 'open-settings') openSettings();
+      if(t.id === 'close-settings') closeSettings();
+      if(t.id === 'add-member') addMemberRow();
+      if(t.classList && t.classList.contains('remove-row')) t.closest('.row').remove();
+      if(t.id === 'save-settings') saveSettings();
+    });
+
+    document.getElementById('import-file').addEventListener('change', (e) => {
+      const f = e.target.files[0]; if(!f) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try{
+          const obj = JSON.parse(reader.result);
+          if(obj && Array.isArray(obj.members) && obj.reports && typeof obj.reports === 'object'){
+            data = obj; saveData(); render(); alert('Imported!');
+          } else alert('Invalid file format.');
+        }catch(err){ alert('Could not parse file.'); }
+      };
+      reader.readAsText(f);
+      e.target.value = '';
+    });
+
+    function openSettings(){
+      const modal = document.getElementById('settings-modal');
+      const box = document.getElementById('settings');
+      box.innerHTML = '';
+      data.members.forEach(m => addMemberRow(m.name, m.chores.join(', ')));
+      modal.hidden = false;
+    }
+    function closeSettings(){ document.getElementById('settings-modal').hidden = true; }
+    function addMemberRow(name='', chores=''){
+      const box = document.getElementById('settings');
+      const div = document.createElement('div');
+      div.className = 'row';
+      div.innerHTML = `
+        <input class="m-name" placeholder="Name" value="${escapeHtml(name)}" />
+        <input class="m-chores" placeholder="Chores (comma-separated)" value="${escapeHtml(chores)}" />
+        <button type="button" class="btn remove-row" title="Remove">×</button>`;
+      box.appendChild(div);
+    }
+    function slug(s){ return s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'') || 'member-'+Math.random().toString(36).slice(2,7); }
+    function dedupeById(arr){ const seen=new Set(); return arr.filter(m => (seen.has(m.id) ? false : (seen.add(m.id), true))); }
+    function saveSettings(){
+      const rows = [...document.querySelectorAll('#settings .row')];
+      const members = rows.map(row => {
+        const name = row.querySelector('.m-name').value.trim();
+        const chores = row.querySelector('.m-chores').value.split(',').map(s=>s.trim()).filter(Boolean);
+        const id = slug(name);
+        return name ? { id, name, chores } : null;
+      }).filter(Boolean);
+      data.members = dedupeById(members);
+      saveData(); closeSettings(); render();
+    }
+
+    function showApp(){
+      document.getElementById('app').hidden = false;
+      document.getElementById('auth-overlay').style.display = 'none';
+      render();
+    }
+    function checkAuth(){
+      if(sessionStorage.getItem(SESSION_KEY) === '1'){ showApp(); return; }
+      const form = document.getElementById('login-form');
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const v = document.getElementById('password').value;
+        if(v === PASSWORD){
+          sessionStorage.setItem(SESSION_KEY, '1');
+          showApp();
+        } else {
+          document.getElementById('pw-error').textContent = 'Incorrect password.';
+        }
+      });
+    }
+
+    document.getElementById('today').textContent = new Date().toLocaleDateString();
+    checkAuth();
+  })();
+  </script>
+</body>
+</html>
