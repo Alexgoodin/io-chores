@@ -94,7 +94,7 @@
       <p class="muted">Enter the password to continue.</p>
       <div class="field">
         <input id="password" type="password" placeholder="Password" required aria-label="Password" />
-        <button class="btn primary" type="submit">Enter</button>
+        <button id="login-button" class="btn primary" type="submit">Enter</button>
       </div>
       <div id="pw-error" class="error"></div>
       <p class="subtle" style="margin-top:10px">Heads up: this is a lightweight client-side lock for convenience, not true security.</p>
@@ -335,13 +335,26 @@
     function checkAuth(){
       // Always require the password screen on page load — do NOT auto-login from session.
       const form = document.getElementById('login-form');
-      form.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const v = document.getElementById('password').value;
+      const btn = document.getElementById('login-button');
+      const pw = document.getElementById('password');
+
+      function handleLogin(){
+        const v = pw.value;
         if(v === USER_PASSWORD){
           sessionStorage.setItem(SESSION_KEY, 'user');
           showApp('user');
         } else if(v === ADMIN_PASSWORD){
+          sessionStorage.setItem(SESSION_KEY, 'admin');
+          showApp('admin');
+        } else {
+          document.getElementById('pw-error').textContent = 'Incorrect password.';
+        }
+      }
+
+      form.addEventListener('submit', (e) => { e.preventDefault(); handleLogin(); });
+      if(btn) btn.addEventListener('click', (e) => { e.preventDefault(); handleLogin(); });
+      if(pw) pw.addEventListener('keydown', (e) => { if(e.key === 'Enter'){ e.preventDefault(); handleLogin(); } });
+    } else if(v === ADMIN_PASSWORD){
           sessionStorage.setItem(SESSION_KEY, 'admin');
           showApp('admin');
         } else {
