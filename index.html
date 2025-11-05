@@ -94,7 +94,7 @@
       <p class="muted">Enter the password to continue.</p>
       <div class="field">
         <input id="password" type="password" placeholder="Password" required aria-label="Password" />
-        <button id="login-button" class="btn primary" type="submit">Enter</button>
+        <button id="login-button" class="btn primary" type="button">Enter</button>
       </div>
       <div id="pw-error" class="error"></div>
       <p class="subtle" style="margin-top:10px">Heads up: this is a lightweight client-side lock for convenience, not true security.</p>
@@ -339,11 +339,25 @@
       const pw = document.getElementById('password');
 
       function handleLogin(){
-        const v = pw.value;
+        const v = (pw ? pw.value : '').trim();
+        if(!v) return;
         if(v === USER_PASSWORD){
           sessionStorage.setItem(SESSION_KEY, 'user');
           showApp('user');
         } else if(v === ADMIN_PASSWORD){
+          sessionStorage.setItem(SESSION_KEY, 'admin');
+          showApp('admin');
+        } else {
+          const err = document.getElementById('pw-error');
+          if(err) err.textContent = 'Incorrect password.';
+        }
+      }
+
+      // Prevent any default form submission reloading the page
+      if(form){ form.setAttribute('action', ''); form.addEventListener('submit', (e)=>{ e.preventDefault(); return false; }); }
+      if(btn){ btn.addEventListener('click', (e)=>{ e.preventDefault(); handleLogin(); }); }
+      if(pw){ pw.addEventListener('keydown', (e)=>{ if(e.key === 'Enter'){ e.preventDefault(); handleLogin(); } }); }
+    } else if(v === ADMIN_PASSWORD){
           sessionStorage.setItem(SESSION_KEY, 'admin');
           showApp('admin');
         } else {
